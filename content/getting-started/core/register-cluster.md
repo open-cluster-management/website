@@ -26,6 +26,13 @@ Prepare another Kubernetes cluster to function as the managed cluster. For examp
 kind create cluster --name <managed cluster name> # kind create cluster --name cluster1
 ```
 
+Then set the following environment variables that will be used throughout to simplify the instructions:
+
+```Shell
+export CTX_MANAGED_CLUSTER=<your managed cluster context>   # export CTX_MANAGED_CLUSTER=kind-cluster1
+export MANAGED_CLUSTER_NAME=<your managed cluster name>     # export MANAGED_CLUSTER_NAME=cluster1
+```
+
 If you are using OKD, OpenShift, you will need to prepare a kubeconfig with `certificate-authority-data`, `client-certificate-data` and `client-key-data`. By default, it's located in `auth/kubeconfig` under your installation folder.
 
 ## Install from source
@@ -39,7 +46,7 @@ git clone https://github.com/open-cluster-management-io/registration-operator
 Ensure the `kubectl` context is set to point to the managed cluster:
 
 ```Shell
-kubectl config use-context <managed cluster context> # kubectl config use-context kind-cluster1
+kubectl config use-context ${CTX_MANAGED_CLUSTER}
 ```
 
 Deploy agent on a managed `kind` cluster.
@@ -57,12 +64,11 @@ If you are using OKD, OpenShift, or have `OLM` installed in your cluster, you ca
 After a successful deployment, a `certificatesigningrequest` and a `managedcluster` will be created on the hub cluster.
 
 ```Shell
-$ kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
-$ kubectl get csr
+$ kubectl get csr --context ${CTX_HUB_CLUSTER}
 NAME                              AGE   REQUESTOR                       CONDITION
 <managed cluster name>-<suffix>   41s   kubernetes-admin                Pending
 csr-<suffix>                      76m   system:node:hub-control-plane   Approved,Issued
-$ kubectl get managedcluster
+$ kubectl get managedcluster --context ${CTX_HUB_CLUSTER}
 NAME                    HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
 <managed cluster name>  false          https://localhost                           57s
 ```
@@ -70,11 +76,11 @@ NAME                    HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE
 Next approve the certificate and set managecluster to be accepted by the hub with following commands:
 
 ```Shell
-kubectl certificate approve {csr name}
-kubectl patch managedcluster {managed cluster name} -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+kubectl certificate approve {csr name} --context ${CTX_HUB_CLUSTER}
+kubectl patch managedcluster {managed cluster name} -p='{"spec":{"hubAcceptsClient":true}}' --type=merge --context ${CTX_HUB_CLUSTER}
 ```
 
-Run `kubectl get managedcluster` again on the hub cluster. You should be able to see that the managed cluster is registered now.
+Run `kubectl get managedcluster --context ${CTX_HUB_CLUSTER}` again on the hub cluster. You should be able to see that the managed cluster is registered now.
 
 ```Shell
 NAME                     HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
@@ -109,19 +115,18 @@ spec:
 Apply the yaml file to the hub cluster.
 
 ```Shell
-kubectl apply -f manifest-work.yaml
+kubectl apply -f manifest-work.yaml --context ${CTX_HUB_CLUSTER}
 ```
 
 Verify that the `manifestwork` resource was applied to the hub.
 ```Shell
-kubectl -n <managed cluster name> get manifestwork/mw-01 -o yaml # kubectl -n cluster1 get manifestwork/mw-01 -o yaml
+kubectl -n <managed cluster name> get manifestwork/mw-01 -oyaml --context ${CTX_HUB_CLUSTER} # kubectl -n cluster1 get manifestwork/mw-01 -oyaml --context ${CTX_HUB_CLUSTER}
 ```
 
 Check on the managed cluster and see the _hello_ Pod has been deployed from the hub cluster.
 
 ```Shell
-$ kubectl config use-context <managed cluster context> # kubectl config use-context kind-cluster1
-$ kubectl -n default get pod
+$ kubectl -n default get pod --context ${CTX_MANAGED_CLUSTER}
 NAME    READY   STATUS    RESTARTS   AGE
 hello   1/1     Running   0          108s
 ```
@@ -131,7 +136,7 @@ hello   1/1     Running   0          108s
 
   For example, checking managedcluster and get below result.
   ```
-  $ kubectl get managedcluster
+  $ kubectl get managedcluster --context ${CTX_HUB_CLUSTER}
   NAME                   HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
   <managed cluster name> true           https://localhost               Unknown     46m
   ```
@@ -139,13 +144,13 @@ hello   1/1     Running   0          108s
 
   On the hub cluster, check the managedcluster status.
   ```
-  kubectl get managedcluster <managed cluster name> -oyaml # kubectl get managedcluster cluster1 -oyaml
+  kubectl get managedcluster <managed cluster name> -oyaml --context ${CTX_HUB_CLUSTER} # kubectl get managedcluster cluster1 -oyaml --context ${CTX_HUB_CLUSTER}
   ```
   On the hub cluster, check the lease status.
   ```
-  kubectl get lease -n <managed cluster name> # kubectl get lease -n cluster1
+  kubectl get lease -n <managed cluster name> --context ${CTX_HUB_CLUSTER} # kubectl get lease -n cluster1 --context ${CTX_HUB_CLUSTER}
   ```
   On the managed cluster, check the klusterlet status.
   ```
-  kubectl get klusterlet -o yaml
+  kubectl get klusterlet -o yaml --context ${CTX_MANAGED_CLUSTER}
   ```

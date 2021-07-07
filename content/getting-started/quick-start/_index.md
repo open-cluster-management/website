@@ -18,6 +18,14 @@ kind create cluster --name <your hub cluster name>     # kind create cluster --n
 kind create cluster --name <your managed cluster name> # kind create cluster --name cluster1
 ```
 
+Then set the following environment variables that will be used throughout to simplify the instructions:
+
+```Shell
+export CTX_HUB_CLUSTER=<your hub cluster context>           # export CTX_HUB_CLUSTER=kind-hub
+export CTX_MANAGED_CLUSTER=<your managed cluster context>   # export CTX_MANAGED_CLUSTER=kind-cluster1
+export MANAGED_CLUSTER_NAME=<your managed cluster name>     # export MANAGED_CLUSTER_NAME=cluster1
+```
+
 ## Bootstrap via Clusteradm CLI tool
 
 ### Install Clusteradm CLI tool
@@ -26,16 +34,10 @@ Download and extract the [clusteradm binary](https://github.com/open-cluster-man
 
 ### Deploy a cluster manager on your hub cluster
 
-1. Ensure the `kubectl` context is set to point to the hub cluster:
+1. Bootstrap the Open Cluster Management control plane on your cluster:
 
     ```Shell
-    kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
-    ```
-
-2. Bootstrap the Open Cluster Management control plane:
-
-    ```Shell
-    clusteradm init
+    clusteradm init --context ${CTX_HUB_CLUSTER}
     ```
 
    Then you will get a result with a generated  `join`  command:
@@ -49,30 +51,18 @@ Download and extract the [clusteradm binary](https://github.com/open-cluster-man
 
 ### Deploy a klusterlet agent on your manage cluster
 
-1. Ensure the `kubectl` context is set to point to the managed cluster:
+1. Run the previously copied `join` command by append the context of your managed cluster to join the hub cluster:
    
     ```Shell
-    kubectl config use-context <managed cluster context> # kubectl config use-context kind-cluster1
-    ```
-
-2. Run the previously copied `join` command to join the hub cluster:
-   
-    ```Shell
-    clusteradm join --hub-token <token_data> --hub-apiserver https://126.0.0.1:39242 --cluster-name <managed_cluster_name>
+    clusteradm join --hub-token <token_data> --hub-apiserver https://126.0.0.1:39242 --cluster-name <managed_cluster_name> --context ${CTX_MANAGED_CLUSTER}
     ```
 
 ### Accept join request and verify
 
-1. Ensure the `kubectl` context is set to point to the hub cluster:
-   
-    ```Shell
-    kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
-    ```
-
-2. Wait for csr created on hub:
+1. Wait for csr created on your hub cluster:
 
    ```Shell
-   kubectl get csr -w | grep <managed_cluster_name> # kubectl get csr -w | grep cluster1 
+   kubectl get csr -w --context ${CTX_HUB_CLUSTER} | grep <managed_cluster_name> # kubectl --context ${CTX_HUB_CLUSTER} get csr -w | grep cluster1 
    ```
    
    We would get a result looks like the following after csr created:
@@ -81,16 +71,16 @@ Download and extract the [clusteradm binary](https://github.com/open-cluster-man
    cluster1-tqcjj   33s   kubernetes.io/kube-apiserver-client   system:serviceaccount:open-cluster-management:cluster-bootstrap   Pending
    ```   
 
-3. Accept request:
+2. Accept request:
    
     ```Shell
-    clusteradm accept --clusters <managed_cluster_name> # clusteradm accept --clusters cluster1
+    clusteradm accept --clusters <managed_cluster_name> --context ${CTX_HUB_CLUSTER} # clusteradm accept --clusters cluster1 --context ${CTX_HUB_CLUSTER}
     ```
 
-4. Verify `managedcluster` have been created successfully:
+3. Verify `managedcluster` has been created successfully:
 
     ```Shell
-    kubectl get managedcluster
+    kubectl get managedcluster --context ${CTX_HUB_CLUSTER}
     ```
 
    The return result looks like:
