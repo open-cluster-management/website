@@ -37,8 +37,8 @@ Complete the following steps to install the policy framework from prebuilt image
 
    ```Shell
    # Configure kubectl to point to the hub cluster
-   kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
-   
+   kubectl config use-context ${CTX_HUB_CLUSTER}
+
    # Create the namespace
    export HUB_NAMESPACE="open-cluster-management"
    kubectl create ns ${HUB_NAMESPACE}
@@ -59,38 +59,23 @@ Complete the following steps to install the policy framework from prebuilt image
 2. Ensure the pods are running on hub with the following command:
 
    ```Shell
-   $ kubectl get pods -n open-cluster-management 
+   $ kubectl get pods -n open-cluster-management
    NAME                                           READY   STATUS    RESTARTS   AGE
    governance-policy-propagator-8c77f7f5f-kthvh   1/1     Running   0          94s
    ```
 
-3. Export the hub cluster `kubeconfig` with the following command:
-
-   For `kind` cluster:
-
-   ```Shell
-   kind get kubeconfig --name <cluster name> --internal > $PWD/kubeconfig_hub
-   ```
-
-   For non-`kind` clusters:
-
-   ```Shell
-   kubectl config view --context=<hub cluster context> --minify --flatten > $PWD/kubeconfig_hub
-   ```
-
-4. Deploy the policy synchronization components to the managed cluster. Run the following commands: 
+3. Deploy the policy synchronization components to the managed cluster. Run the following commands: 
 
    ```Shell
    # Configure kubectl to point to the managed cluster
-   export MANAGED_CLUSTER_NAME=<managed cluster name> # export MANAGED_CLUSTER_NAME=cluster1
-   kubectl config use-context <managed cluster context> # kubectl config use-context kind-$MANAGED_CLUSTER_NAME
+   kubectl config use-context ${CTX_MANAGED_CLUSTER}
    
    # Create the namespace
    export MANAGED_NAMESPACE="open-cluster-management-agent-addon"
    kubectl create ns ${MANAGED_NAMESPACE}
    
    # Create the secret to authenticate with the hub
-   kubectl -n ${MANAGED_NAMESPACE} create secret generic hub-kubeconfig --from-file=kubeconfig=$PWD/kubeconfig_hub
+   kubectl -n ${MANAGED_NAMESPACE} create secret generic hub-kubeconfig --from-file=kubeconfig=${HUB_KUBECONFIG}
    
    # Apply the policy CRD
    export GIT_PATH="https://raw.githubusercontent.com/open-cluster-management-io"

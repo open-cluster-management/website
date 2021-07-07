@@ -30,7 +30,14 @@ To create the hub cluster with `kind`, run:
 ```Shell
 # kind delete cluster --name hub # if the kind cluster is previously created and can be safely deleted
 kind create cluster --name hub
-kind get kubeconfig --name {your kind cluster name} --internal > ./.hub-kubeconfig # ./.hub-kubeconfig is default value of HUB_KUBECONFIG 
+kind get kubeconfig --name {your kind cluster name} --internal > ~/hub-kubeconfig # ~/hub-kubeconfig is default value of HUB_KUBECONFIG 
+```
+
+Then set the following environment variable that will be used throughout to simplify the instructions:
+
+```Shell
+export CTX_HUB_CLUSTER=<your hub cluster context>           # export CTX_HUB_CLUSTER=kind-hub
+export HUB_KUBECONFIG=<your hub cluster kubeconfig file>    # export HUB_KUBECONFIG=~/hub-kubeconfig    
 ```
 
 ## Install from source
@@ -44,7 +51,7 @@ git clone https://github.com/open-cluster-management-io/registration-operator
 Ensure the `kubectl` context is set to point to the hub cluster:
 
 ```Shell
-kubectl config use-context <hub cluster context> # kubectl config use-context kind-hub
+kubectl config use-context ${CTX_HUB_CLUSTER}
 ```
 
 Deploy hub
